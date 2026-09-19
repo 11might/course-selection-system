@@ -148,6 +148,8 @@ def md_to_docx(md_path: Path, docx_path: Path, title: str):
 def main():
     progress_md = docs_dir / "学习进度与技术说明.md"
     journal_md = docs_dir / "今日总结-2026-07-25.md"
+    handbook_md = docs_dir / "给新Agent交接手册.md"
+    schedule_md = docs_dir / "每日学习时间表与督学约定.md"
 
     files = [
         (progress_md, docs_dir / "学习进度与技术说明.docx", "选课系统 · 学习进度与技术说明"),
@@ -155,6 +157,16 @@ def main():
             journal_md,
             docs_dir / "学习日记汇总.docx",
             "选课系统 · 学习日记汇总（按时间续写，含 7/25 起全部）",
+        ),
+        (
+            handbook_md,
+            docs_dir / "给新Agent交接手册.docx",
+            "给新 Agent 的交接手册（环境 / 禁区 / 教学习惯 / 真实进度）",
+        ),
+        (
+            schedule_md,
+            docs_dir / "每日学习时间表与督学约定.docx",
+            "每日学习时间表与督学约定（压力驱动版）",
         ),
     ]
     for md, docx, title in files:
@@ -166,9 +178,10 @@ def main():
     style.font.name = "Microsoft YaHei"
     style.font.size = Pt(11)
     style._element.rPr.rFonts.set(qn("w:eastAsia"), "Microsoft YaHei")
-    add_paragraph(combined, "选课系统 · 学习总结完整版（进度说明 + 日记）", size=18, bold=True, space_after=12)
-    append_md_to_doc(combined, progress_md, "第一部分：学习进度与技术说明")
-    append_md_to_doc(combined, journal_md, "第二部分：学习日记（按时间续写）")
+    add_paragraph(combined, "选课系统 · 学习总结完整版（交接手册 + 进度说明 + 日记）", size=18, bold=True, space_after=12)
+    append_md_to_doc(combined, handbook_md, "第一部分：给新 Agent 的交接手册")
+    append_md_to_doc(combined, progress_md, "第二部分：学习进度与技术说明")
+    append_md_to_doc(combined, journal_md, "第三部分：学习日记（按时间续写）")
     combined_path = docs_dir / "学习总结完整版.docx"
     combined.save(combined_path)
     print("saved", combined_path)
