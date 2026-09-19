@@ -11,7 +11,16 @@ Word 文档说明（2026-09-19 改版：以 Word 为主，md 已废弃）
   找关键词定位：           python docs\_docx_tool.py find "docs\学习日记汇总.docx" 2026-09-19
   改某一段（先预览）：     python docs\_docx_tool.py replace "docs\给新Agent交接手册.docx" 58 "新文字"
   确认后写盘：             在上面那条末尾加 --apply
+  往中间插一段：           python docs\_docx_tool.py insert "docs\给新Agent交接手册.docx" 58 "新文字" --apply
+  删除某一段：             python docs\_docx_tool.py delete "docs\给新Agent交接手册.docx" 189 --apply
   文末续写一段：           python docs\_docx_tool.py append "docs\学习日记汇总.docx" "## 续写：..." --apply
+
+各文档分工（2026-09-19 用户确认）：
+  - 学习日记汇总.docx —— **只往下加当天做了什么，不改上面已写的**。
+  - 给新Agent交接手册.docx / 学习进度与技术说明.docx —— 记最新状态，按代码变化更新。
+  - 但要**保留成长痕迹**：比如密码「一开始明文 → 后来改加密」，就写成前后对比，
+    别把旧状态抹掉。只有明显的事实错误（说某文件不存在其实存在、说没提交其实提交了）
+    才直接改掉或删除。
 
 铁律：
   1. **改前先 commit 存档。** docx 是二进制，git 看不见改了啥，只能整份存。

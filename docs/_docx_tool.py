@@ -17,7 +17,13 @@
      python docs\\_docx_tool.py replace "docs\\给新Agent交接手册.docx" 58 "新的整段文字"
      python docs\\_docx_tool.py replace "docs\\给新Agent交接手册.docx" 58 "新的整段文字" --apply
 
-  4) 追加一段到文末（比如续写日记）
+  4) 往中间章节插一段（在第 N 段之后）
+     python docs\\_docx_tool.py insert "docs\\给新Agent交接手册.docx" 58 "要插入的文字" --apply
+
+  5) 删掉某一段（比如插错位置、或明显错误的句子）
+     python docs\\_docx_tool.py delete "docs\\给新Agent交接手册.docx" 189 --apply
+
+  6) 文末追加一段（比如续写日记）
      python docs\\_docx_tool.py append "docs\\学习日记汇总.docx" "## 续写：2026-09-20（...）" --apply
 
 规则 / 已知坑（都是真踩过的）：
@@ -113,6 +119,43 @@ def cmd_append(args) -> None:
     print(f"已追加到：{args.path}（现 {len(Document(str(args.path)).paragraphs)} 段）", file=sys.stderr)
 
 
+def cmd_insert(args) -> None:
+    """在第 index 段之后插入一段新文字（用于往中间章节补内容）。"""
+    doc = _load(args.path)
+    if not (0 <= args.index < len(doc.paragraphs)):
+        sys.exit(f"段落号越界：{args.index}（本文共 {len(doc.paragraphs)} 段）")
+    sys.stdout.reconfigure(encoding="utf-8")
+    anchor = doc.paragraphs[args.index]
+    print(f"锚点[{args.index}]：{anchor.text[:70]}")
+    print(f"插入  ：{args.text[:70]}{'...' if len(args.text) > 70 else ''}")
+    if not args.apply:
+        print("\n（预览模式，未写盘。确认无误后加 --apply）", file=sys.stderr)
+        return
+    new_para = doc.add_paragraph(args.text)  # 先建到文末，再挪到锚点后面
+    anchor._p.addnext(new_para._p)
+    doc.save(str(args.path))
+    paras = Document(str(args.path)).paragraphs
+    pos = next((i for i, p in enumerate(paras) if p._p is new_para._p), None)  # 同一进程内可用；重开文档则对象不同
+    where = f"新段落号 {pos}" if pos is not None else "已插入（段落号请用 read 复核）"
+    print(f"\n已插入到：{args.path}（{where}，现共 {len(paras)} 段）", file=sys.stderr)
+
+
+def cmd_delete(args) -> None:
+    """删除指定段落（用于清理插错位置或明显错误的内容）。"""
+    doc = _load(args.path)
+    if not (0 <= args.index < len(doc.paragraphs)):
+        sys.exit(f"段落号越界：{args.index}（本文共 {len(doc.paragraphs)} 段）")
+    para = doc.paragraphs[args.index]
+    sys.stdout.reconfigure(encoding="utf-8")
+    print(f"将删除[{args.index}]：{para.text}")
+    if not args.apply:
+        print("\n（预览模式，未写盘。确认无误后加 --apply）", file=sys.stderr)
+        return
+    para._p.getparent().remove(para._p)
+    doc.save(str(args.path))
+    print(f"\n已删除，现存 {len(Document(str(args.path)).paragraphs)} 段", file=sys.stderr)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="_docx_tool.py",
@@ -143,6 +186,19 @@ def build_parser() -> argparse.ArgumentParser:
     p_app.add_argument("text")
     p_app.add_argument("--apply", action="store_true", help="真正写盘")
     p_app.set_defaults(func=cmd_append)
+
+    p_ins = sub.add_parser("insert", help="在第 N 段之后插入一段（默认预览）")
+    p_ins.add_argument("path", type=Path)
+    p_ins.add_argument("index", type=int, help="锚点段落号，0 起；新段落插在它后面")
+    p_ins.add_argument("text")
+    p_ins.add_argument("--apply", action="store_true", help="真正写盘")
+    p_ins.set_defaults(func=cmd_insert)
+
+    p_del = sub.add_parser("delete", help="删除第 N 段（默认预览）")
+    p_del.add_argument("path", type=Path)
+    p_del.add_argument("index", type=int, help="段落号，0 起")
+    p_del.add_argument("--apply", action="store_true", help="真正写盘")
+    p_del.set_defaults(func=cmd_delete)
 
     return parser
 
