@@ -1,0 +1,2 @@
+# docs 文档工具依赖（与 backend\requirements.txt 无关，那是后端的）
+python-docx>=1.2.0
