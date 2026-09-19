@@ -26,6 +26,12 @@
   6) 文末追加一段（比如续写日记）
      python docs\\_docx_tool.py append "docs\\学习日记汇总.docx" "## 续写：2026-09-20（...）" --apply
 
+  7) 重建「学习总结完整版.docx」合并本（改完其他 Word 后跑一次同步）
+     python docs\\_docx_tool.py combined --apply
+     说明：按 手册 → 进度 → 日记 → 时间表 的顺序，从现有 docx 抽取文字拼成一份。
+     抽取是纯文字（表格会拍平成一行），所以合并本只适合通勤/手机速览；
+     要看细节请看对应的单份 Word。
+
 规则 / 已知坑（都是真踩过的）：
 
 - 一个「段落」在 Word 内部可能被拆成多个 run（格式变了就会拆）。
@@ -44,6 +50,8 @@ import sys
 from pathlib import Path
 
 from docx import Document
+from docx.shared import Pt
+from docx.oxml.ns import qn
 
 
 def _load(path: Path) -> Document:
@@ -156,6 +164,78 @@ def cmd_delete(args) -> None:
     print(f"\n已删除，现存 {len(Document(str(args.path)).paragraphs)} 段", file=sys.stderr)
 
 
+def _set_run_font(run, size: int, bold: bool = False) -> None:
+    run.font.size = Pt(size)
+    run.font.bold = bold
+    run.font.name = "Microsoft YaHei"
+    rpr = run._element.get_or_add_rPr()
+    rfonts = rpr.get_or_add_rFonts()
+    rfonts.set(qn("w:eastAsia"), "Microsoft YaHei")
+
+
+# 合并本的组成顺序（改完单份 Word 后跑 combined 同步）
+COMBINED_PARTS = [
+    ("给新Agent交接手册.docx", "第一部分：给新 Agent 的交接手册"),
+    ("学习进度与技术说明.docx", "第二部分：学习进度与技术说明"),
+    ("学习日记汇总.docx", "第三部分：学习日记（按时间续写）"),
+    ("每日学习时间表与督学约定.docx", "第四部分：每日学习时间表与督学约定"),
+]
+
+
+def cmd_combined(args) -> None:
+    """从 4 份单文档重建「学习总结完整版.docx」，供通勤/手机速览。"""
+    docs_dir = args.path
+    if not docs_dir.is_dir():
+        docs_dir = docs_dir.parent
+    missing = [n for n, _ in COMBINED_PARTS if not (docs_dir / n).exists()]
+    if missing:
+        sys.exit(f"缺少单份文档：{missing}（在 {docs_dir}）")
+
+    combined = Document()
+    style = combined.styles["Normal"]
+    style.font.name = "Microsoft YaHei"
+    style.font.size = Pt(11)
+    style._element.rPr.rFonts.set(qn("w:eastAsia"), "Microsoft YaHei")
+
+    title = combined.add_paragraph()
+    _set_run_font(title.add_run("选课系统 · 学习总结完整版（交接手册 + 进度说明 + 日记 + 时间表）"), 18, True)
+    title.paragraph_format.space_after = Pt(12)
+
+    total = 0
+    counts = []
+    for filename, part_title in COMBINED_PARTS:
+        head = combined.add_paragraph()
+        _set_run_font(head.add_run(part_title), 16, True)
+        sep = combined.add_paragraph()
+        _set_run_font(sep.add_run("————————"), 10)
+        texts = _extract_texts(docs_dir / filename)
+        counts.append((filename, len(texts)))
+        for text in texts:
+            para = combined.add_paragraph()
+            _set_run_font(para.add_run(text), 11)
+            total += 1
+
+    sys.stdout.reconfigure(encoding="utf-8")
+    print("将按此顺序合并：")
+    for filename, n in counts:
+        print(f"  {filename}  ->  {n} 段")
+    print(f"合计 {total} 段 -> {docs_dir / '学习总结完整版.docx'}")
+
+    if not args.apply:
+        print("\n（预览模式，未写盘。确认无误后加 --apply）", file=sys.stderr)
+        return
+
+    out = docs_dir / "学习总结完整版.docx"
+    combined.save(str(out))
+    print(f"\n已重建：{out}", file=sys.stderr)
+
+
+def _extract_texts(path: Path):
+    """抽出单份 docx 的正文段落，跳过前两行（大标题与分隔线）。"""
+    texts = [p.text for p in Document(str(path)).paragraphs]
+    return [t for t in texts[2:] if t.strip()]
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="_docx_tool.py",
@@ -199,6 +279,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_del.add_argument("index", type=int, help="段落号，0 起")
     p_del.add_argument("--apply", action="store_true", help="真正写盘")
     p_del.set_defaults(func=cmd_delete)
+
+    p_com = sub.add_parser("combined", help="从 4 份单文档重建学习总结完整版.docx（默认预览）")
+    p_com.add_argument("path", type=Path, nargs="?", default=Path(__file__).resolve().parent, help="docs 目录，默认脚本所在目录")
+    p_com.add_argument("--apply", action="store_true", help="真正写盘")
+    p_com.set_defaults(func=cmd_combined)
 
     return parser
 
