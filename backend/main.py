@@ -163,3 +163,22 @@ def student_home(request:Request):
         'tip':'only student can see',
         'username':payload.get('username'),
     }
+
+@app.get('/courses')
+def courses():
+    conn=pymysql.connect(
+        host=config.DB_HOST,
+        port=config.DB_PORT,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        database=config.DB_NAME,
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    try:
+        with conn.cursor()as cur:
+            cur.execute('select id,course_name,credit,capacity from `course`')
+            rows=cur.fetchall()
+        return {'msg':'ok','course':rows}
+    finally:
+        conn.close()
