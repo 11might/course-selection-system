@@ -177,8 +177,8 @@ def courses():
     )
     try:
         with conn.cursor()as cur:
-            cur.execute('select id,course_name,credit,capacity from `course`')
+            cur.execute('select id,course_name,teacher_id,credit,capacity from `course`')
             rows=cur.fetchall()
-        return {'msg':'ok','course':rows}
+        return {'msg':'ok','courses':rows}
     finally:
         conn.close()
