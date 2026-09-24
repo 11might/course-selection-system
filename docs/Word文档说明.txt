@@ -42,6 +42,7 @@ Word 文档说明（2026-09-19 改版：以 Word 为主，md 已废弃）
   学习进度与技术说明.docx      长期进度（已按 2026-09-19 代码校正）
   学习日记汇总.docx            按天日记，7/25 起续写到 2026-09-19
   学习总结完整版.docx          上面四份的合并本（四部分），通勤/手机只拷这一个
+  HTML与CSS速查.docx           前端基础速查（标签/块级行内/表格/盒子模型/CSS），写页面时随手查
   _docx_tool.py                ★ 读写 docx 的工具（见上）
   requirements-docs.txt        docs 工具依赖（python-docx），与后端依赖无关
   _md_to_docx.py               旧脚本：md→docx 导出器。**md 已删，跑不起来了**，留作历史

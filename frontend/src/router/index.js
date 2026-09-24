@@ -1,6 +1,7 @@
 import {createRouter,createWebHistory} from "vue-router";
 import Login from '../views/Login.vue'
 import Home from '../views/Home.vue'
+import Courses from '../views/Courses.vue'
 
 const router=createRouter({
     history:createWebHistory(),
@@ -8,6 +9,7 @@ const router=createRouter({
         {path:'/',redirect:'/login'},
         {path:'/login',component:Login},
         {path:'/home',component:Home},
+        {path:'/courses',component:Courses},
     ],
 })
 router.beforeEach((to,from)=>{
