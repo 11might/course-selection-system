@@ -24,3 +24,13 @@ create table  `course`(
  credit decimal(3,1) not null,
  capacity int not null default 50
 );
+
+-- ===== T8 选课：student_course 关系表（2026-09-25 追加，本人自己敲）=====
+-- 多对多中间表：一行 = 某个学生选了某门课
+-- unique key：保证同一个学生不会把同一门课选两遍（组合唯一）
+create table `student_course`(
+ id         int primary key auto_increment,
+ student_id int not null,
+ course_id  int not null,
+ unique key uk_student_course (student_id, course_id)
+);

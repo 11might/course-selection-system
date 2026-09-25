@@ -13,3 +13,13 @@ insert into `course`(course_name, teacher_id, credit, capacity) values
 ('操作系统',   2, 3.5, 40),
 ('数据库原理', 2, 3.0, 45),
 ('软件工程',   2, 2.0, 80);
+
+-- 选课关系测试数据（T8）
+-- 一行 = 某个学生选了某门课；注意组合 (student_id, course_id) 不能重复
+truncate table `student_course`;
+
+insert into `student_course`(student_id, course_id) values
+(1, 1),
+(1, 2),
+(2, 1),
+(2, 3);
