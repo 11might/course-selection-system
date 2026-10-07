@@ -182,3 +182,28 @@ def courses():
         return {'msg':'ok','courses':rows}
     finally:
         conn.close()
+@app.get('/my-courses')
+def my_courses(request:Request):
+    payload=get_user_from_token(request)
+    student_id=payload.get('user_id')
+    conn=pymysql.connect(
+        host=config.DB_HOST,
+        port=config.DB_PORT,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        database=config.DB_NAME,
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    try:
+        with conn.cursor()as cur:
+            cur.execute('''select sc.student_id,sc.course_id,c.course_name,c.credit,c.capacity
+            from `student_course` sc
+             join `course` c on sc.course_id=c.id
+             where sc.student_id=%s''',
+                [student_id],)
+            rows=cur.fetchall()
+        return {'msg':'ok','courses':rows}
+    finally:
+        conn.close()
+    

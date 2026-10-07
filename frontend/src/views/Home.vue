@@ -12,5 +12,6 @@ function  onLogout(){
 <template>
   <div>欢迎，{{userStore.userInfo.username}}</div>
   <router-link to="/courses">查看课程</router-link>
+  <router-link to="/my-courses">我的课程</router-link>
   <button @click="onLogout">退出</button>
 </template>

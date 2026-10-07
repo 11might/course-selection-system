@@ -15,7 +15,6 @@ create table `user`(
 -- 注意：这里【故意不写 drop table】。
 -- 因为执行整个 init.sql 时 drop 是真删，会清空数据；
 -- 以后要重建这张表，手动敲一句 drop table `course`; 即可。
--- ↓ 下面这段由本人自己敲（2026-09-21），敲完再写回本文件
 
 create table  `course`(
  id   int primary key auto_increment,
