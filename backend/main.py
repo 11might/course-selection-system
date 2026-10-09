@@ -206,4 +206,66 @@ def my_courses(request:Request):
         return {'msg':'ok','courses':rows}
     finally:
         conn.close()
-    
+@app.post('/select-course')
+def select_course(course_id:int,request:Request):
+    payload=get_user_from_token(request)
+    student_id=payload.get('user_id')
+
+    conn=pymysql.connect(
+        host=config.DB_HOST,
+        port=config.DB_PORT,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        database=config.DB_NAME,
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute('select capacity from `course` where id=%s',[course_id])
+            row=cur.fetchone()
+            if row is None:
+                return {'msg':"课程不存在"}
+            capacity=row['capacity']
+            cur.execute('select count(*) as n from `student_course` where course_id=%s',[course_id])
+            num=cur.fetchone()['n']
+            if num>=capacity:
+                return {'msg':'课程已满'}
+            try:
+               cur.execute(
+                   'insert into `student_course` (student_id,course_id) values (%s,%s)',
+                   [student_id,course_id]
+               )
+               conn.commit()
+            except pymysql.err.IntegrityError:
+                return {'msg':'你已经选过这门课了'}
+            return {'msg':'ok'}
+    finally:
+        conn.close()
+@app.delete('/drop-course')
+def drop_course(course_id:int,request:Request):
+    payload=get_user_from_token(request)  #验票
+    student_id=payload.get('user_id')     #取身份
+
+    conn=pymysql.connect(
+        host=config.DB_HOST,
+        port=config.DB_PORT,
+        user=config.DB_USER,
+        password=config.DB_PASSWORD,
+        database=config.DB_NAME,
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor,
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'delete from `student_course` where student_id=%s and course_id=%s',
+                [student_id,course_id]
+            )
+            conn.commit()
+
+            if cur.rowcount==0:
+                return {'msg':'你没有选这门课'}
+        return {'msg':'ok'}
+    finally:
+        conn.close()
